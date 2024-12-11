@@ -1,0 +1,10 @@
+﻿{
+    "Name": "ForLily",
+    "Author": "Evanp",
+    "Version": "1.0.0",
+    "Description": "For Lily <3",
+    "UniqueID": "Evanp.ForLily",
+    "EntryDll": "ForLily.dll",
+    "MinimumApiVersion": "4.0.0",
+    "UpdateKeys": []
+}
