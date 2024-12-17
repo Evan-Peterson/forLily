@@ -1,9 +1,12 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
 using StardewValley;
+using StardewValley.Characters;
+using StardewValley.Locations;
 
 namespace ForLily
 {
@@ -18,6 +21,17 @@ namespace ForLily
         public override void Entry(IModHelper helper)
         {
             helper.Events.Input.ButtonPressed += this.OnButtonPressed;
+
+            var existingCueDef = Game1.soundBank.GetCueDefinition("cat");
+
+            SoundEffect audio;
+            string filePathCombined = Path.Combine(this.Helper.DirectoryPath, "cutMeow.wav");
+            using (var stream = new System.IO.FileStream(filePathCombined, System.IO.FileMode.Open))
+            {
+                audio = SoundEffect.FromStream(stream);
+            }
+
+            existingCueDef.SetSound(audio, Game1.audioEngine.GetCategoryIndex("Sound"), false);
         }
 
 
@@ -34,7 +48,20 @@ namespace ForLily
                 return;
 
             // print button presses to the console window
-            this.Monitor.Log($"{Game1.player.Name} pressed {e.Button}.", LogLevel.Debug);
+            //this.Monitor.Log($"{Game1.player.Name} pressed {e.Button}.", LogLevel.Debug);
+
+            if(e.Button == SButton.MouseRight)
+            {
+                this.Monitor.Log($"MOUSE RIGHT DETECTED", LogLevel.Debug);
+                this.Monitor.Log($"{this.Helper.Input.GetCursorPosition().GrabTile}", LogLevel.Debug);
+                this.Monitor.Log($"{this.Helper.Input.GetCursorPosition().ScreenPixels}", LogLevel.Debug);
+
+                foreach(NPC character in Utility.getAllPets())
+                {
+                    this.Monitor.Log($"{character.currentLocation}", LogLevel.Debug);
+                    this.Monitor.Log($"{character.lastPosition}", LogLevel.Debug);
+                }
+            }
         }
     }
 }
