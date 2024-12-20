@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
+using Netcode;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
@@ -13,6 +14,8 @@ namespace ForLily
     /// <summary>The mod entry point.</summary>
     internal sealed class ModEntry : Mod
     {
+
+        private List<DateTime> clicks = new List<DateTime>();
         /*********
         ** Public methods
         *********/
@@ -23,6 +26,21 @@ namespace ForLily
             helper.Events.Input.ButtonPressed += this.OnButtonPressed;
 
             var existingCueDef = Game1.soundBank.GetCueDefinition("cat");
+            var purrCue = new CueDefinition();
+            purrCue.name = "purr";
+            purrCue.instanceLimit = 1;
+            purrCue.limitBehavior = CueDefinition.LimitBehavior.ReplaceOldest;
+
+            SoundEffect purrAudio;
+            string purrPath = Path.Combine(this.Helper.DirectoryPath, "cutPurr.wav");
+            using (var stream = new System.IO.FileStream(purrPath, System.IO.FileMode.Open))
+            {
+                purrAudio = SoundEffect.FromStream(stream);
+            }
+
+            purrCue.SetSound(purrAudio, Game1.audioEngine.GetCategoryIndex("Sound"), false);
+
+            Game1.soundBank.AddCue(purrCue);
 
             SoundEffect audio;
             string filePathCombined = Path.Combine(this.Helper.DirectoryPath, "cutMeow.wav");
@@ -47,19 +65,52 @@ namespace ForLily
             if (!Context.IsWorldReady)
                 return;
 
-            // print button presses to the console window
-            //this.Monitor.Log($"{Game1.player.Name} pressed {e.Button}.", LogLevel.Debug);
 
             if(e.Button == SButton.MouseRight)
             {
-                this.Monitor.Log($"MOUSE RIGHT DETECTED", LogLevel.Debug);
-                this.Monitor.Log($"{this.Helper.Input.GetCursorPosition().GrabTile}", LogLevel.Debug);
-                this.Monitor.Log($"{this.Helper.Input.GetCursorPosition().ScreenPixels}", LogLevel.Debug);
 
-                foreach(NPC character in Utility.getAllPets())
+                this.Monitor.Log($"Cursor Tile: {this.Helper.Input.GetCursorPosition().GrabTile}", LogLevel.Debug);
+                Vector2 pos = this.Helper.Input.GetCursorPosition().ScreenPixels;
+                Vector2 playerTile = this.Helper.Input.GetCursorPosition().GrabTile;
+
+                foreach (Pet character in Utility.getAllPets())
                 {
-                    this.Monitor.Log($"{character.currentLocation}", LogLevel.Debug);
-                    this.Monitor.Log($"{character.lastPosition}", LogLevel.Debug);
+                    this.Monitor.Log($"Pet Tile: {character.Tile}", LogLevel.Debug);
+
+                    
+                    if(character.petType.Equals(new NetString("Cat")) && character.whichBreed.Equals(new NetString("0")))
+                    {
+                        this.Monitor.Log($"CAT DETECTED", LogLevel.Debug);
+                        Vector2 catTile = character.Tile;
+
+                        if(Math.Abs(catTile.X - playerTile.X) <= 2 && Math.Abs(catTile.Y - playerTile.Y) <= 2)
+                        {
+                            this.Monitor.Log($"HIT DETECTED", LogLevel.Debug);
+
+                            DateTime currentTime = DateTime.Now;
+
+                            for (int i = clicks.Count - 1; i >= 0; i--)
+                            {
+                                TimeSpan age = currentTime.Subtract(clicks[i]);
+                                if (age.Seconds >= 5)
+                                {
+                                    clicks.RemoveAt(i);
+                                }
+                            }
+
+                            clicks.Add(DateTime.Now);
+
+                            this.Monitor.Log($"Length: {clicks.Count}", LogLevel.Debug);
+
+
+                            if (clicks.Count >= 3)
+                            {
+                                Game1.playSound("purr");
+                            }
+
+                        }
+                    }
+
                 }
             }
         }
